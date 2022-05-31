@@ -8,15 +8,15 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Normal
 
-from rl2022.exercise3.agents import Agent
-from rl2022.exercise3.networks import FCNetwork
-from rl2022.exercise3.replay import Transition
+from rl2022.DQN_REINFORCE.agents import Agent
+from rl2022.DQN_REINFORCE.networks import FCNetwork
+from rl2022.DQN_REINFORCE.replay import Transition
 
 
 class DDPG(Agent):
     """DDPG agent
 
-    **YOU NEED TO IMPLEMENT FUNCTIONS IN THIS CLASS**
+    
 
     :attr critic (FCNetwork): fully connected critic network
     :attr critic_optim (torch.optim): PyTorch optimiser for critic network
@@ -50,14 +50,12 @@ class DDPG(Agent):
         super().__init__(action_space, observation_space)
         STATE_SIZE = observation_space.shape[0]
         ACTION_SIZE = action_space.shape[0]
-
+        
         self.upper_action_bound = action_space.high[0]
         self.lower_action_bound = action_space.low[0]
-
-        # ######################################### #
-        #  BUILD YOUR NETWORKS AND OPTIMIZERS HERE  #
-        # ######################################### #
-        # self.actor = Actor(STATE_SIZE, policy_hidden_size, ACTION_SIZE)
+        
+        
+        
         self.actor = FCNetwork(
             (STATE_SIZE, *policy_hidden_size, ACTION_SIZE), output_activation=torch.nn.Tanh
         )
@@ -66,8 +64,7 @@ class DDPG(Agent):
         )
 
         self.actor_target.hard_update(self.actor)
-        # self.critic = Critic(STATE_SIZE + ACTION_SIZE, critic_hidden_size)
-        # self.critic_target = Critic(STATE_SIZE + ACTION_SIZE, critic_hidden_size)
+        
 
         self.critic = FCNetwork(
             (STATE_SIZE + ACTION_SIZE, *critic_hidden_size, 1), output_activation=None
@@ -79,26 +76,21 @@ class DDPG(Agent):
 
         self.policy_optim = Adam(self.actor.parameters(), lr=policy_learning_rate, eps=1e-3)
         self.critic_optim = Adam(self.critic.parameters(), lr=critic_learning_rate, eps=1e-3)
+        from torch.optim import lr_scheduler
+        self.scheduler_critic = lr_scheduler.CosineAnnealingLR(self.critic_optim,T_max=400000,verbose=False)
+        self.scheduler_actor = lr_scheduler.CosineAnnealingLR(self.policy_optim,T_max=400000,verbose=False)
 
-
-        # ############################################# #
-        # WRITE ANY HYPERPARAMETERS YOU MIGHT NEED HERE #
-        # ############################################# #
+        
         self.gamma = gamma
         self.critic_learning_rate = critic_learning_rate
         self.policy_learning_rate = policy_learning_rate
         self.tau = tau
 
-        # ################################################### #
-        # DEFINE A GAUSSIAN THAT WILL BE USED FOR EXPLORATION #
-        # ################################################### #
-
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q4")
-
-        # ############################### #
-        # WRITE ANY AGENT PARAMETERS HERE #
-        # ############################### #
+        
+        
+        self.noise = Normal(torch.zeros(ACTION_SIZE),0.1*torch.ones(ACTION_SIZE))
+        
+        
 
         self.saveables.update(
             {
@@ -141,7 +133,7 @@ class DDPG(Agent):
     def schedule_hyperparameters(self, timestep: int, max_timesteps: int):
         """Updates the hyperparameters
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q4**
+        
 
         This function is called before every episode and allows you to schedule your
         hyperparameters.
@@ -149,13 +141,19 @@ class DDPG(Agent):
         :param timestep (int): current timestep at the beginning of the episode
         :param max_timestep (int): maximum timesteps that the training loop will run for
         """
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q4")
+        import numpy as np
+        init_tau = 0.01 #0.005 for pendulum
+        max_tau = 0.15
+        steepness = 4
+        
+        # Scheduler to increase tau over time
+        self.tau = np.tanh(steepness*(timestep/max_timesteps)**2)/(1/max_tau)+init_tau
+        
 
     def act(self, obs: np.ndarray, explore: bool):
         """Returns an action (should be called at every timestep)
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q4**
+        
         
         When explore is False you should select the best action possible (greedy). However, during exploration,
         you should be implementing exporation using the self.noise variable that you should have declared in the __init__.
@@ -165,13 +163,26 @@ class DDPG(Agent):
         :param explore (bool): flag indicating whether we should explore
         :return (sample from self.action_space): action the agent should perform
         """
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q4")
+        
+        self.actor.eval()
+        if explore:
+            
+            with torch.no_grad():
+                action = self.actor(torch.tensor(obs))+self.noise.sample()
+                
+                action = np.array(action.numpy())
+        else:
+            with torch.no_grad():
+                action = np.array(self.actor(torch.tensor(obs)).numpy())
+        self.actor.train()
+        
+        return np.clip(action,self.lower_action_bound,self.upper_action_bound)
+        
 
     def update(self, batch: Transition) -> Dict[str, float]:
         """Update function for DQN
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q4**
+        
 
         This function is called after storing a transition in the replay buffer. This happens
         every timestep. It should update your critic and actor networks, target networks with soft
@@ -180,11 +191,71 @@ class DDPG(Agent):
         :param batch (Transition): batch vector from replay buffer
         :return (Dict[str, float]): dictionary mapping from loss names to loss values
         """
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q4")
+        
+        cur_state = batch[0]
+        action = batch[1]
+        next_state = batch[2]
+        rewards = batch[3]
+        done = batch[4]
 
-        q_loss = 0.0
-        p_loss = 0.0
+        
+        self.critic.train()
+        
+        
+        
+        
+
+        next_action = self.actor_target(next_state)
+        q_target = rewards + self.gamma*(1-done)*self.critic_target(torch.hstack((next_state,next_action)))
+        q_actual = self.critic(torch.hstack((cur_state,action)))
+        
+        q_loss = F.mse_loss(q_actual,q_target)
+        
+        
+            
+        self.critic_optim.zero_grad()
+        q_loss.backward()
+        self.critic_optim.step()
+        self.scheduler_critic.step()
+
+        self.actor.train()
+        self.critic.train(False)
+        self.policy_optim.zero_grad()
+
+       
+        p_loss = -self.critic(torch.hstack((cur_state,self.actor(cur_state)))).mean()
+        
+
+        p_loss.backward()
+        self.policy_optim.step()
+        self.scheduler_actor.step()
+        
+
+        # Parameters soft update
+        state_dict = self.critic.state_dict()
+        state_dict_target = self.critic_target.state_dict()
+        
+        for (name, param),(name_target, param_target) in zip(state_dict.items(),state_dict_target.items()):
+            # Transform the parameter as required.
+            
+            transformed_param = (1-self.tau)*param_target + self.tau*param
+            with torch.no_grad():
+                param_target.copy_(transformed_param)
+            # Update the parameter.
+        
+
+
+        state_dict = self.actor.state_dict()
+        state_dict_target = self.actor_target.state_dict()
+        
+        for (name, param),(name_target, param_target) in zip(state_dict.items(),state_dict_target.items()):
+            # Transform the parameter as required.
+            
+            transformed_param = (1-self.tau)*param_target + self.tau*param
+            with torch.no_grad():
+                param_target.copy_(transformed_param)
+        
+        
         return {
             "q_loss": q_loss,
             "p_loss": p_loss,

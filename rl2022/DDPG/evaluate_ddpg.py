@@ -1,14 +1,14 @@
 import gym
 from typing import List, Tuple
 
-from rl2022.exercise4.agents import DDPG
-from rl2022.exercise4.train_ddpg import PENDULUM_CONFIG, BIPEDAL_CONFIG, play_episode
+from rl2022.DDPG.agents import DDPG
+from rl2022.DDPG.train_ddpg import PENDULUM_CONFIG, BIPEDAL_CONFIG, play_episode
 
 
 RENDER = True
 
 CONFIG = PENDULUM_CONFIG
-# CONFIG = BIPEDAL_CONFIG
+CONFIG = BIPEDAL_CONFIG
 
 
 def evaluate(env: gym.Env, config, output: bool = True) -> Tuple[List[float], List[float]]:

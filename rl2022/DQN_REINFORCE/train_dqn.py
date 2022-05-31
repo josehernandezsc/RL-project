@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 
 from rl2022.constants import EX3_DQN_CARTPOLE_CONSTANTS as CARTPOLE_CONSTANTS
 from rl2022.constants import EX3_LUNARLANDER_CONSTANTS as LUNARLANDER_CONSTANTS
-from rl2022.exercise3.agents import DQN
-from rl2022.exercise3.replay import ReplayBuffer
+from rl2022.DQN_REINFORCE.agents import DQN
+from rl2022.DQN_REINFORCE.replay import ReplayBuffer
 
 RENDER = False # FALSE FOR FASTER TRAINING / TRUE TO VISUALIZE ENVIRONMENT DURING EVALUATION
 
 LUNARLANDER_CONFIG = {
     "eval_freq": 5000, # HOW OFTEN WE EVALUATE (AND RENDER IF RENDER=TRUE)
     "eval_episodes": 10,  # DECREASING THIS MIGHT REDUCE EVALUATION ACCURACY; BUT MAKES IT EASIER TO SEE HOW THE POLICY EVOLVES OVER TIME (BY ENABLING RENDER ABOVE)
-    "learning_rate": 1e-2,
+    "learning_rate": 1e-3,
     "hidden_size": (128, 64),
-    "target_update_freq": 5000,
+    "target_update_freq": 500, 
     "batch_size": 16,
     "buffer_capacity": int(1e6),
     "plot_loss": False,
@@ -27,18 +27,18 @@ LUNARLANDER_CONFIG.update(LUNARLANDER_CONSTANTS)
 CARTPOLE_CONFIG = {
     "eval_freq": 2000,
     "eval_episodes": 20,
-    "learning_rate": 1e-2,
+    "learning_rate": 3*1e-4,
     "hidden_size": (128, 64),
-    "target_update_freq": 5000,
+    "target_update_freq": 1000, 
     "batch_size": 16,
     "buffer_capacity": int(1e6),
-    "plot_loss": False, # SET TRUE FOR 3.3 (Understanding the Loss)
+    "plot_loss": True, # SET TRUE FOR 3.3 (Understanding the Loss)
 }
 CARTPOLE_CONFIG.update(CARTPOLE_CONSTANTS)
 
 
 CONFIG = CARTPOLE_CONFIG
-# CONFIG = LUNARLANDER_CONFIG
+CONFIG = LUNARLANDER_CONFIG
 
 
 def play_episode(
@@ -59,7 +59,7 @@ def play_episode(
 
     episode_timesteps = 0
     episode_return = 0
-
+    
     while not done:
         action = agent.act(obs, explore=explore)
         nobs, reward, done, _ = env.step(action)

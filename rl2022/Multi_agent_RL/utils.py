@@ -14,6 +14,7 @@ def visualise_q_table(env, q_table, i):
     assert hasattr(env, "payoff")
     assert hasattr(env, "ep_length")
     ep_length = env.ep_length
+    
     for a1 in range(3):
         q_value = q_table[a1]
         actual_value = 0
@@ -71,12 +72,12 @@ def evaluate(env, agents, max_steps, eval_episodes, render, output=True):
             if (eps_num == eval_episodes - 1) and render:
                 env.render()
                 time.sleep(0.5)
-
+            
             episodic_return += rewards[0]
             steps += 1
 
         episodic_returns.append(episodic_return)
-
+    
     mean_return = np.mean(episodic_returns)
     std_return = np.std(episodic_returns)
 
@@ -117,9 +118,10 @@ def visualise_q_convergence(player_index, q_tables, env, title=None, savefig=Non
             max_label = rf"$max_a Q(a, b_{act})$"
             q_label = rf"$Q(\cdot, b_{act})$"
         ax[act].axhline(max_q, ls='--', color='r', alpha=0.5, label=max_label)
-
+        
         # plot respective Q-values
         q_values = q_tables[:, act]
+        
         ax[act].plot(q_values, label=q_label)
 
         # axes labels and limits

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from ntpath import join
 import random
 from typing import List, Dict, DefaultDict
 
@@ -10,7 +11,7 @@ from gym.spaces.utils import flatdim
 class MultiAgent(ABC):
     """Base class for multi-agent reinforcement learning
 
-    **DO NOT CHANGE THIS BASE CLASS**
+    
 
     """
 
@@ -67,7 +68,7 @@ class MultiAgent(ABC):
 class IndependentQLearningAgents(MultiAgent):
     """Agent using the Independent Q-Learning algorithm
 
-    **YOU NEED TO IMPLEMENT FUNCTIONS IN THIS CLASS**
+    
     """
 
     def __init__(self, learning_rate: float =0.5, epsilon: float =1.0, **kwargs):
@@ -94,13 +95,40 @@ class IndependentQLearningAgents(MultiAgent):
     def act(self) -> List[int]:
         """Implement the epsilon-greedy action selection here for stateless task
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q5**
+        
 
         :return (List[int]): index of selected action for each agent
         """
-        actions = []
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q5")
+        import numpy as np
+        
+        q_vector_1 = np.zeros(self.action_spaces[0].n)
+
+        for j, value in self.q_tables[0].items():
+            
+            q_vector_1[j] += value
+
+        q_vector_2 = np.zeros(self.action_spaces[1].n)
+
+        for j, value in self.q_tables[1].items():
+            
+            q_vector_2[j] += value
+        
+        
+        
+        if random.uniform(0,1) < self.epsilon:
+            
+            action = self.action_spaces.sample()
+            
+            
+        else:
+            action = (np.argmax(q_vector_1),np.argmax(q_vector_2))
+            
+        
+            
+        
+        actions = [i for i in action]
+        
+        
         return actions
 
     def learn(
@@ -108,7 +136,7 @@ class IndependentQLearningAgents(MultiAgent):
     ) -> List[float]:
         """Updates the Q-tables based on agents' experience
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q5**
+        
 
         :param action (List[int]): index of applied action of each agent
         :param rewards (List[float]): received reward for each agent
@@ -116,14 +144,32 @@ class IndependentQLearningAgents(MultiAgent):
         :return (List[float]): updated Q-values for current actions of each agent
         """
         updated_values = []
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q5")
+        
+        import numpy as np
+        
+        for a in range(self.num_agents):
+
+            q_vector_n_obs = np.zeros(self.action_spaces[a].n)
+            
+            for j, value in self.q_tables[a].items():
+                q_vector_n_obs[j] += value
+            
+
+            best_qn = np.max(q_vector_n_obs)
+                
+            new_q_value = self.q_tables[a][actions[a]]+self.learning_rate*(rewards[a]+self.gamma*best_qn-self.q_tables[a][actions[a]])
+            self.q_tables[a][actions[a]] = new_q_value
+            updated_values.append(new_q_value)
+            
+            
+            
+        
         return updated_values
 
     def schedule_hyperparameters(self, timestep: int, max_timestep: int):
         """Updates the hyperparameters
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q5**
+        
 
         This function is called before every episode and allows you to schedule your
         hyperparameters.
@@ -131,15 +177,27 @@ class IndependentQLearningAgents(MultiAgent):
         :param timestep (int): current timestep at the beginning of the episode
         :param max_timestep (int): maximum timesteps that the training loop will run for
         """
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q5")
+        
+        import numpy as np
+        
+        
+        init_lr = 0.001
+        steepness = 3
+        self.learning_rate = (2*init_lr)/(np.exp(steepness*timestep/max_timestep)+1)
+        
+
+
+        init_eps = 0.9
+        steepness = 2
+        self.epsilon = np.clip((2*init_eps)/(np.exp(steepness*timestep/max_timestep)+1),0.1,1)
+        
 
 
 class JointActionLearning(MultiAgent):
     """
     Agents using the Joint Action Learning algorithm with Opponent Modelling
 
-    **YOU NEED TO IMPLEMENT FUNCTIONS IN THIS CLASS**
+    
     """
 
     def __init__(self, learning_rate: float =0.5, epsilon: float =1.0, **kwargs):
@@ -160,7 +218,7 @@ class JointActionLearning(MultiAgent):
         self.learning_rate = learning_rate
         self.epsilon = epsilon
         self.n_acts = [flatdim(action_space) for action_space in self.action_spaces]
-
+        
         # initialise Q-tables for all agents
         self.q_tables: List[DefaultDict] = [defaultdict(lambda: 0) for _ in range(self.num_agents)]
 
@@ -171,13 +229,62 @@ class JointActionLearning(MultiAgent):
     def act(self) -> List[int]:
         """Implement the epsilon-greedy action selection here for stateless task
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q5**
+        
 
         :return (List[int]): index of selected action for each agent
         """
         joint_action = []
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q5")
+        import numpy as np
+        
+        
+        
+        if bool(self.models[0]) == False and bool(self.models[1]) == False:
+            
+            for ac1 in range(self.n_acts[0]):
+                for ac2 in range(self.n_acts[1]):
+                    self.models[0][(ac2,)] = 0
+                    self.models[1][(ac1,)] = 0
+        
+        ev = np.zeros((self.num_agents,self.n_acts[0]))
+        #Assuming there are only 2 agents
+        
+        
+
+        max_ev=0
+        for ac1 in range(self.n_acts[0]):
+            max_ev=0
+            for ac2 in range(self.n_acts[1]):
+                max_ev += self.models[0][(ac2,)]
+            for ac2 in range(self.n_acts[1]):
+                
+                ev[0,ac1]+=self.models[0][(ac2,)]*self.q_tables[0][(ac1,ac2)]/max(1, max_ev)
+
+        
+
+        
+        max_ev = 0
+        for ac2 in range(self.n_acts[1]):
+            max_ev=0
+            for ac1 in range(self.n_acts[0]):
+                max_ev += self.models[1][(ac1,)]
+            for ac1 in range(self.n_acts[0]):
+                
+                ev[1,ac2]+=self.models[1][(ac1,)]*self.q_tables[1][(ac1,ac2)]/max(1, max_ev)
+        
+        
+        
+        if random.uniform(0,1) < self.epsilon:
+            action = self.action_spaces.sample()
+            
+        else:
+            action = np.argmax(ev,axis=1)
+            
+            
+            
+
+        
+        joint_action = [i for i in action]
+        
         return joint_action
 
     def learn(
@@ -185,7 +292,7 @@ class JointActionLearning(MultiAgent):
     ) -> List[float]:
         """Updates the Q-tables and models based on agents' experience
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q5**
+        
 
         :param action (List[int]): index of applied action of each agent
         :param rewards (List[float]): received reward for each agent
@@ -193,14 +300,58 @@ class JointActionLearning(MultiAgent):
         :return (List[float]): updated Q-values for current observation-action pair of each agent
         """
         updated_values = []
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q5")
+        import numpy as np
+
+
+        
+
+        self.models[1][(actions[0],)]+=1 #a1 according to a2
+        self.models[0][(actions[1],)]+=1 #a2 according to a1
+        
+        ev = np.zeros((self.num_agents,self.n_acts[0]))
+        #Assuming there are only 2 agents
+        
+        
+        
+        max_ev=0
+        for ac1 in range(self.n_acts[0]):
+            max_ev=0
+            for ac2 in range(self.n_acts[1]):
+                max_ev += self.models[0][(ac2,)]
+            for ac2 in range(self.n_acts[1]):
+                ev[0,ac1]+=self.models[0][(ac2,)]*self.q_tables[0][(ac1,ac2)]/max(1, max_ev)
+
+        print(dones)
+
+        
+        max_ev = 0
+        for ac2 in range(self.n_acts[1]):
+            max_ev=0
+            for ac1 in range(self.n_acts[0]):
+                max_ev += self.models[1][(ac1,)]
+            for ac1 in range(self.n_acts[0]):
+                
+                ev[1,ac2]+=self.models[1][(ac1,)]*self.q_tables[1][(ac1,ac2)]/max(1, max_ev)
+                
+                
+        
+        
+
+        new_val = rewards[0] + self.gamma*np.max(ev[0,:]) - self.q_tables[0][(actions[0],actions[1])]
+        self.q_tables[0][(actions[0],actions[1])] += self.learning_rate*new_val
+        updated_values.append(self.q_tables[0][(actions[0],actions[1])])
+        new_val = rewards[1] + self.gamma*np.max(ev[1,:]) - self.q_tables[1][(actions[0],actions[1])]
+        self.q_tables[1][(actions[0],actions[1])] += self.learning_rate*new_val
+        updated_values.append(self.q_tables[1][(actions[0],actions[1])])
+        
+        
+        
         return updated_values
 
     def schedule_hyperparameters(self, timestep: int, max_timestep: int):
         """Updates the hyperparameters
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q5**
+        
 
         This function is called before every episode and allows you to schedule your
         hyperparameters.
@@ -208,5 +359,15 @@ class JointActionLearning(MultiAgent):
         :param timestep (int): current timestep at the beginning of the episode
         :param max_timestep (int): maximum timesteps that the training loop will run for
         """
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q5")
+        
+        import numpy as np
+        
+        
+        init_lr = 0.001 #0.001
+        steepness = 3 #2
+        self.learning_rate = (2*init_lr)/(np.exp(steepness*timestep/max_timestep)+1)
+        
+        init_eps = 0.6
+        steepness = 4
+        self.epsilon = np.clip((2*init_eps)/(np.exp(steepness*timestep/max_timestep)+1),0.05,1)
+        

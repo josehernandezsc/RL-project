@@ -2,18 +2,18 @@ import random
 
 import numpy as np
 
-from rl2022.exercise5.agents import IndependentQLearningAgents, JointActionLearning
-from rl2022.exercise5.utils import visualise_both_q_convergence
-from rl2022.exercise5.matrix_game import create_penalty_game, create_climbing_game
-from rl2022.exercise5.train_iql import PEN_CONFIG as IQL_PEN_CONFIG
-from rl2022.exercise5.train_iql import CLIMBING_CONFIG as IQL_CLIMBING_CONFIG
-from rl2022.exercise5.train_iql import train as iql_train
-from rl2022.exercise5.train_jal import PEN_CONFIG as JAL_PEN_CONFIG
-from rl2022.exercise5.train_jal import CLIMBING_CONFIG as JAL_CLIMBING_CONFIG
-from rl2022.exercise5.train_jal import train as jal_train
+from rl2022.Multi_agent_RL.agents import IndependentQLearningAgents, JointActionLearning
+from rl2022.Multi_agent_RL.utils import visualise_both_q_convergence
+from rl2022.Multi_agent_RL.matrix_game import create_penalty_game, create_climbing_game
+from rl2022.Multi_agent_RL.train_iql import PEN_CONFIG as IQL_PEN_CONFIG
+from rl2022.Multi_agent_RL.train_iql import CLIMBING_CONFIG as IQL_CLIMBING_CONFIG
+from rl2022.Multi_agent_RL.train_iql import train as iql_train
+from rl2022.Multi_agent_RL.train_jal import PEN_CONFIG as JAL_PEN_CONFIG
+from rl2022.Multi_agent_RL.train_jal import CLIMBING_CONFIG as JAL_CLIMBING_CONFIG
+from rl2022.Multi_agent_RL.train_jal import train as jal_train
 
 
-GAME = "penalty" # "climbing" or "penalty"
+GAME = "climbing" # "climbing" or "penalty"
 SEEDS = 5
 SAVEFIG = None # give string to save file with generated plots under given name
 

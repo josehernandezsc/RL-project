@@ -5,15 +5,15 @@ from tqdm import tqdm
 from typing import List, Tuple
 
 from rl2022.constants import EX3_REINFORCE_CARTPOLE_CONSTANTS as CARTPOLE_CONSTANTS
-from rl2022.exercise3.agents import Reinforce
+from rl2022.DQN_REINFORCE.agents import Reinforce
 
 RENDER = False # FALSE FOR FASTER TRAINING / TRUE TO VISUALIZE ENVIRONMENT DURING EVALUATION
 
 CARTPOLE_CONFIG = {
     "eval_freq": 10000,
     "eval_episodes": 20,
-    "hidden_size": (16, 16),
-    "learning_rate": 1e-2,
+    "hidden_size": (64,32),
+    "learning_rate": 1.5*1e-3,
 }
 CARTPOLE_CONFIG.update(CARTPOLE_CONSTANTS)
 

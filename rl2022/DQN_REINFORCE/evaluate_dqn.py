@@ -1,8 +1,8 @@
 import gym
 from typing import List, Tuple
 
-from rl2022.exercise3.agents import DQN
-from rl2022.exercise3.train_dqn import LUNARLANDER_CONFIG, play_episode
+from rl2022.DQN_REINFORCE.agents import DQN
+from rl2022.DQN_REINFORCE.train_dqn import LUNARLANDER_CONFIG, play_episode
 
 
 RENDER = True

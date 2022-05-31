@@ -1,0 +1,2 @@
+from rl2022.Multi_agent_RL.agents import IndependentQLearningAgents, JointActionLearning
+from rl2022.Multi_agent_RL.matrix_game import MatrixGame

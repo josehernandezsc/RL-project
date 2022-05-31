@@ -4,9 +4,9 @@ import gym
 
 from rl2022.constants import EX5_PENALTY_CONSTANTS as PENALTY_CONSTANTS
 from rl2022.constants import EX5_CLIMBING_CONSTANTS as CLIMBING_CONSTANTS
-from rl2022.exercise5.agents import IndependentQLearningAgents
-from rl2022.exercise5.utils import visualise_q_table, evaluate, visualise_q_convergence
-from rl2022.exercise5.matrix_game import create_penalty_game, create_climbing_game
+from rl2022.Multi_agent_RL.agents import IndependentQLearningAgents
+from rl2022.Multi_agent_RL.utils import visualise_q_table, evaluate, visualise_q_convergence
+from rl2022.Multi_agent_RL.matrix_game import create_penalty_game, create_climbing_game
 
 
 PEN_CONFIG = {
@@ -24,7 +24,7 @@ CLIMBING_CONFIG = {
 CLIMBING_CONFIG.update(CLIMBING_CONSTANTS)
 
 CONFIG = PEN_CONFIG
-# CONFIG = CLIMBING_CONFIG
+#CONFIG = CLIMBING_CONFIG
 
 
 def iql_eval(env, config, q_tables, max_steps=10, eval_episodes=500, render=False, output=True):
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     total_reward, _, _, evaluation_q_tables, q_tables = train(env, CONFIG)
     print()
     print("Q-table:")
-    # print(q_tables)
+    
     for i, q_table in enumerate(q_tables):
         visualise_q_table(env, q_table, i)
 

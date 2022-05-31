@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 from rl2022.constants import EX4_PENDULUM_CONSTANTS as PENDULUM_CONSTANTS
 from rl2022.constants import EX4_BIPEDAL_CONSTANTS as BIPEDAL_CONSTANTS
-from rl2022.exercise4.agents import DDPG
-from rl2022.exercise3.replay import ReplayBuffer
+from rl2022.DDPG.agents import DDPG
+from rl2022.DQN_REINFORCE.replay import ReplayBuffer
 
 RENDER = False
 
@@ -16,11 +16,11 @@ PENDULUM_CONFIG = {
     "eval_freq": 2000,
     "eval_episodes": 3,
     "policy_learning_rate": 1e-3,
-    "critic_learning_rate": 1e-3,
+    "critic_learning_rate": 5e-3,
     "critic_hidden_size": [64, 64],
     "policy_hidden_size": [64, 64],
-    "tau": 0.01,
-    "batch_size": 64,
+    "tau": 0.001,
+    "batch_size": 32,
     "buffer_capacity": int(1e6),
 }
 PENDULUM_CONFIG.update(PENDULUM_CONSTANTS)
@@ -28,18 +28,18 @@ PENDULUM_CONFIG.update(PENDULUM_CONSTANTS)
 BIPEDAL_CONFIG = {
     "eval_freq": 20000,
     "eval_episodes": 3,
-    "policy_learning_rate": 1e-2,
-    "critic_learning_rate": 1e-2,
-    "critic_hidden_size": [32, 32],
-    "policy_hidden_size": [32, 32],
-    "tau": 0.05,
-    "batch_size": 32,
+    "policy_learning_rate": 1e-3, 
+    "critic_learning_rate": 4e-3, 
+    "critic_hidden_size": [1024, 128], 
+    "policy_hidden_size": [1024, 32], 
+    "tau": 0.01, 
+    "batch_size": 64,
     "buffer_capacity": int(1e6),
 }
 BIPEDAL_CONFIG.update(BIPEDAL_CONSTANTS)
 
 CONFIG = PENDULUM_CONFIG
-# CONFIG = BIPEDAL_CONFIG
+#CONFIG = BIPEDAL_CONFIG
 
 
 def play_episode(

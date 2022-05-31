@@ -4,9 +4,9 @@ import gym
 
 from rl2022.constants import EX5_PENALTY_CONSTANTS as PENALTY_CONSTANTS
 from rl2022.constants import EX5_CLIMBING_CONSTANTS as CLIMBING_CONSTANTS
-from rl2022.exercise5.agents import JointActionLearning
-from rl2022.exercise5.utils import visualise_joint_q_table, evaluate, visualise_joint_q_convergence
-from rl2022.exercise5.matrix_game import create_penalty_game, create_climbing_game
+from rl2022.Multi_agent_RL.agents import JointActionLearning
+from rl2022.Multi_agent_RL.utils import visualise_joint_q_table, evaluate, visualise_joint_q_convergence
+from rl2022.Multi_agent_RL.matrix_game import create_penalty_game, create_climbing_game
 
 
 PEN_CONFIG = {
@@ -18,13 +18,13 @@ PEN_CONFIG.update(PENALTY_CONSTANTS)
 
 CLIMBING_CONFIG = {
     "eval_freq": 100,
-    "lr": 0.05,
+    "lr": 0.001, #0.05
     "epsilon": 0.9,
 }
 CLIMBING_CONFIG.update(CLIMBING_CONSTANTS)
 
 CONFIG = PEN_CONFIG
-# CONFIG = CLIMBING_CONFIG
+#CONFIG = CLIMBING_CONFIG
 
 
 def jql_eval(env, config, q_tables, models, max_steps=10, eval_episodes=500, render=False, output=True):
@@ -90,7 +90,7 @@ def train(env, config, output=True):
             acts = agents.act()
             _, rewards, dones, _ = env.step(acts)
             agents.learn(acts, rewards, dones)
-
+            
             t += 1
             step_counter += 1
             # fully cooperative tasks --> only track single reward / all rewards are identical
@@ -99,7 +99,7 @@ def train(env, config, output=True):
             if all(dones):
                 break
 
-        # print(episodic_return)
+        
 
         if eps_num > 0 and eps_num % config["eval_freq"] == 0:
             mean_return, std_return = jql_eval(
@@ -121,6 +121,7 @@ if __name__ == "__main__":
     print()
     print("Q-table:")
     for i, q_table in enumerate(q_tables):
+        
         visualise_joint_q_table(env, q_table, i)
     for i in range(env.n_agents):
         eval_q_tables = [q_table[i] for q_table in evaluation_q_tables]

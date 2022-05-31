@@ -3,13 +3,13 @@ import numpy as np
 from typing import List, Tuple, Dict, Optional, Hashable
 
 from rl2022.constants import EX1_CONSTANTS as CONSTANTS
-from rl2022.exercise1.mdp import MDP, Transition, State, Action
+from rl2022.MDP.mdp import MDP, Transition, State, Action
 
 
 class MDPSolver(ABC):
     """Base class for MDP solvers
 
-    **DO NOT CHANGE THIS CLASS**
+    
 
     :attr mdp (MDP): MDP to solve
     :attr gamma (float): discount factor gamma to use
@@ -57,15 +57,13 @@ class ValueIteration(MDPSolver):
     """
     MDP solver using the Value Iteration algorithm
 
-    **YOU NEED TO IMPLEMENT FUNCTIONS IN THIS CLASS**
+    
     """
 
     def _calc_value_func(self, theta: float) -> np.ndarray:
         """Calculates the value function
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q1**
-
-        **DO NOT ALTER THE MDP HERE**
+        
 
         Useful Variables:
         1. `self.mpd` -- Gives access to the MDP.
@@ -83,14 +81,25 @@ class ValueIteration(MDPSolver):
             E.g. V[3] returns the computed value for state 3
         """
         V = np.zeros(self.state_dim)
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q1")
+        
+        delta = 9999
+        while delta >= theta:
+            delta = 0
+            for s in range(len(self.mdp.states)):
+                
+                v = V[s]
+                v_max = [a for a in np.sum(np.multiply(self.mdp.P[s,:,:],(self.mdp.R[s,:,:]+self.gamma*V[:])),axis=1)]
+                V[s] = np.max(v_max)
+                
+                delta = max(delta,np.abs(v-V[s]))
+        
+        
         return V
         
     def _calc_policy(self, V: np.ndarray) -> np.ndarray:
         """Calculates the policy
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q1**
+        
 
         :param V (np.ndarray of float with dim (num of states)):
             A 1D NumPy array that encodes the computed value function (from _calc_value_func(...))
@@ -105,8 +114,13 @@ class ValueIteration(MDPSolver):
             policy[S, OTHER_ACTIONS] = 0
         """
         policy = np.zeros([self.state_dim, self.action_dim])
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q1")
+        
+        for s in range(len(self.mdp.states)):
+            v_max = [a for a in np.sum(np.multiply(self.mdp.P[s,:,:],(self.mdp.R[s,:,:]+self.gamma*V[:])),axis=1)]
+            policy[s,np.argmax(v_max)] = 1.0
+            
+        
+        
         return policy
 
     def solve(self, theta: float = 1e-6) -> Tuple[np.ndarray, np.ndarray]:
@@ -116,7 +130,7 @@ class ValueIteration(MDPSolver):
         calc_policy functions to return the best policy and the
         computed value function
 
-        **DO NOT CHANGE THIS FUNCTION**
+        
 
         :param theta (float, optional): stop threshold, defaults to 1e-6
         :return (Tuple[np.ndarray of float with dim (num of states, num of actions),
@@ -134,13 +148,13 @@ class PolicyIteration(MDPSolver):
     """
     MDP solver using the Policy Iteration algorithm
 
-    **YOU NEED TO IMPLEMENT FUNCTIONS IN THIS CLASS**
+    
     """
 
     def _policy_eval(self, policy: np.ndarray) -> np.ndarray:
         """Computes one policy evaluation step
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q1**
+        
 
         :param policy (np.ndarray of float with dim (num of states, num of actions)):
             A 2D NumPy array that encodes the policy.
@@ -154,15 +168,32 @@ class PolicyIteration(MDPSolver):
             A 1D NumPy array that encodes the computed value function
             It is indexed as (State) where V[State] is the value of state 'State'
         """
+        
         V = np.zeros(self.state_dim)
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q1")
+        
+        delta = 9999
+        
+        while delta >= self.theta:
+            delta = 0
+            for s in range(len(self.mdp.states)):
+                
+                
+                v = V[s]
+                
+                
+                cur_pol = np.reshape(policy[s,:],(3,1))
+                
+                V[s] = np.sum(np.matmul(cur_pol.T,np.multiply(self.mdp.P[s,:,:],(self.mdp.R[s,:,:]+self.gamma*V[:]))))
+                
+                delta = max(delta,np.abs(v-V[s]))
+                
+        
         return np.array(V)
         
     def _policy_improvement(self) -> Tuple[np.ndarray, np.ndarray]:
         """Computes policy iteration until a stable policy is reached
 
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q1**
+        
 
         Useful Variables (As with Value Iteration):
         1. `self.mpd` -- Gives access to the MDP.
@@ -179,10 +210,46 @@ class PolicyIteration(MDPSolver):
             Tuple of calculated policy and value function
         """
         policy = np.zeros([self.state_dim, self.action_dim])
+
+
+        
+        # Probabilistic uniform policy initialization
+        for i in range(policy.shape[0]):
+            policy[i,:] = 1/policy.shape[1]
+
         V = np.zeros([self.state_dim])
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q1")
+
+        stable = False
+
+        while stable == False:
+            stable = True
+            V=self._policy_eval(policy)
+            for s in range(len(self.mdp.states)):
+
+                
+                
+                
+
+                # Random tie-breaking for argmax (same as np.argmax but randomly selecting max when multiple):
+                old_action = np.random.choice(np.flatnonzero(policy[s,:] == policy[s,:].max()))
+
+
+
+
+                v_max = [a for a in np.sum(np.multiply(self.mdp.P[s,:,:],(self.mdp.R[s,:,:]+self.gamma*V[:])),axis=1)]
+                policy[s,:] = 0
+                policy[s,np.argmax(v_max)] = 1.0
+                
+                if old_action != np.argmax(v_max):
+                    
+                    stable = False
+            
+            
+
         return policy, V
+        
+        
+        
 
     def solve(self, theta: float = 1e-6) -> Tuple[np.ndarray, np.ndarray]:
         """Solves the MDP
@@ -191,7 +258,7 @@ class PolicyIteration(MDPSolver):
         policy improvement function that the student must implement
         and returns the solution
 
-        **DO NOT CHANGE THIS FUNCTION**
+        
 
         :param theta (float, optional): stop threshold, defaults to 1e-6
         :return (Tuple[np.ndarray of float with dim (num of states, num of actions),

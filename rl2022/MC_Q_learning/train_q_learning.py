@@ -2,14 +2,14 @@ import gym
 from tqdm import tqdm
 
 from rl2022.constants import EX2_QL_CONSTANTS as CONSTANTS
-from rl2022.exercise2.agents import QLearningAgent
-from rl2022.exercise2.utils import evaluate
+from rl2022.MC_Q_learning.agents import QLearningAgent
+from rl2022.MC_Q_learning.utils import evaluate
 
 CONFIG = {
     "eval_episodes": 500,
     "eval_freq": 1000,
-    "alpha": 0.5,
-    "epsilon": 0.0,
+    "alpha": .1,
+    "epsilon": 0.2,
 }
 CONFIG.update(CONSTANTS)
 
